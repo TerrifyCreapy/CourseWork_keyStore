@@ -1,0 +1,20 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const feedBackRouter_1 = __importDefault(require("./feedBackRouter"));
+const gamesRouter_1 = __importDefault(require("./gamesRouter"));
+const keysRouter_1 = __importDefault(require("./keysRouter"));
+const platformsRouter_1 = __importDefault(require("./platformsRouter"));
+const TagsRouter_1 = __importDefault(require("./TagsRouter"));
+const userRouter_1 = __importDefault(require("./userRouter"));
+const router = express_1.default.Router();
+router.use('/user', userRouter_1.default);
+router.use('/games', gamesRouter_1.default);
+router.use('/feedback', feedBackRouter_1.default);
+router.use('/keys', keysRouter_1.default);
+router.use('/platforms', platformsRouter_1.default);
+router.use('/tags', TagsRouter_1.default);
+exports.default = router;

@@ -1,53 +1,43 @@
 //import all dependencies
-const express = require('express');
+import express, {Request, Response} from "express";
 const cors = require('cors');
-const env = require('dotenv').config();
+require('dotenv').config();
+const cookies = require('cookie-parser');
+const dbSequelize = require("./db");
+const fileUpload = require('express-fileupload');
+import router from "./router/router";
+import ErrorHandler from "./middleware/ErrorHandlerMDWR";
+import path from "path";
+
+const models = require("./models/models");
 //taking port from .env file
-const PORT = process.env.SERVER_PORT || 3001;
+const PORT =3001;
 
 //init backend
 const app = express();
-
-const db = [
-    {id: 1, title: "123"},
-    {id: 2, title: "1234"},
-    {id: 3, title: "1235"},
-    {id: 4, title: "1236"},
-]
-
-
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.resolve(__dirname, '..', 'static')));
+app.use(fileUpload({}));
+app.use('/api', router);
 
-app.get('/', (req: any, res: any) => {
-    res.sendStatus(200);
-});
+//Обработка ошибок в конце.
+app.use(ErrorHandler)
 
-app.get('/api/db', (req: any, res: any) => {
-    let querydb = db;
 
-    if(req.query.title) {
-        querydb = querydb
-            .filter(e => e.title.indexOf(req.query.title) > -1);
+
+
+async function start() {
+    try {
+        await dbSequelize.authenticate();
+        await dbSequelize.sync();
+        app.listen(PORT,() => console.log(`server started at port ${PORT}`));
     }
-
-    res.json(querydb);
-});
-
-app.get('/api/db/:id', (req: any, res: any) => {
-    res.json(db.filter(e => e.id === +(req.params.id)));
-});
-
-app.post('/api/db', (req: any, res: any) => {
-    const createdTitle = {
-        id: +(new Date());
-        title: req.body.title
+    catch (e) {
+        console.error(e);
     }
+}
 
-    db.push(createdTitle);
-    res.json(createdTitle);
-});
-
+start();
 
 
-app.listen(PORT,() => console.log(`server started at port ${PORT}`));

@@ -1,40 +1,49 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
 //import all dependencies
-const express = require('express');
+const express_1 = __importDefault(require("express"));
 const cors = require('cors');
-const env = require('dotenv').config();
+require('dotenv').config();
+const cookies = require('cookie-parser');
+const dbSequelize = require("./db");
+const fileUpload = require('express-fileupload');
+const router_1 = __importDefault(require("./router/router"));
+const ErrorHandlerMDWR_1 = __importDefault(require("./middleware/ErrorHandlerMDWR"));
+const path_1 = __importDefault(require("path"));
+const models = require("./models/models");
 //taking port from .env file
-const PORT = process.env.SERVER_PORT || 3001;
+const PORT = 3001;
 //init backend
-const app = express();
-const db = [
-    { id: 1, title: "123" },
-    { id: 2, title: "1234" },
-    { id: 3, title: "1235" },
-    { id: 4, title: "1236" },
-];
+const app = (0, express_1.default)();
 app.use(cors());
-app.use(express.json());
-app.get('/', (req, res) => {
-    res.sendStatus(200);
-});
-app.get('/api/db', (req, res) => {
-    let querydb = db;
-    if (req.query.title) {
-        querydb = querydb
-            .filter(e => e.title.indexOf(req.query.title) > -1);
-    }
-    res.json(querydb);
-});
-app.get('/api/db/:id', (req, res) => {
-    res.json(db.filter(e => e.id === +(req.params.id)));
-});
-app.post('/api/db', (req, res) => {
-    const createdTitle = {
-        id: +(new Date()),
-        title: req.body.title
-    };
-    db.push(createdTitle);
-    res.json(createdTitle);
-});
-app.listen(PORT, () => console.log(`server started at port ${PORT}`));
+app.use(express_1.default.json());
+app.use(express_1.default.static(path_1.default.resolve(__dirname, '..', 'static')));
+app.use(fileUpload({}));
+app.use('/api', router_1.default);
+//Обработка ошибок в конце.
+app.use(ErrorHandlerMDWR_1.default);
+function start() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            yield dbSequelize.authenticate();
+            yield dbSequelize.sync();
+            app.listen(PORT, () => console.log(`server started at port ${PORT}`));
+        }
+        catch (e) {
+            console.error(e);
+        }
+    });
+}
+start();
