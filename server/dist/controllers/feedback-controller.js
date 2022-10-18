@@ -21,15 +21,30 @@ class FeedBackController {
             if (!name || !value)
                 return next(ApiError_1.default.badRequest("Body of comment is empty!"));
             const comment = yield FeedBack.create({ name, value });
-            return res.json(comment);
+            return res.status(201).json(comment);
         });
     }
-    getComments(req, res) {
+    getComments(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
+            const { id } = req.body;
+            if (!id)
+                return next(ApiError_1.default.badRequest("Error with id of game!"));
+            const commends = yield FeedBack.findAndCountAll({ where: { id } });
+            return res.json(commends);
         });
     }
-    removeComment(req, res) {
+    removeComment(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const id = req.params.id;
+                if (!id)
+                    return next(ApiError_1.default.badRequest("Error with id of comment!"));
+                const comment = yield FeedBack.destroy({ where: { id } });
+                return res.json(comment);
+            }
+            catch (e) {
+                return next(ApiError_1.default.badRequest(e.message));
+            }
         });
     }
 }

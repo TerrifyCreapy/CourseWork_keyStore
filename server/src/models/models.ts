@@ -7,11 +7,21 @@ const User = sequelize.define('user', {
     email: {type: DataTypes.STRING, unique: true},
     password: { type: DataTypes.STRING, allowNull: false},
     isConfirmed: { type: DataTypes.BOOLEAN, defaultValue: false},
+    activetionLink: { type: DataTypes.STRING },
     roles: { type: DataTypes.ARRAY(DataTypes.STRING) , defaultValue: ["USER"]}
 });
 
-const Basket = sequelize.define('user', {
+const Token = sequelize.define('token', {
+    id: {type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true},
+    refreshToken: {type: DataTypes.STRING(1200), allowNull: false},
+});
+
+const Basket = sequelize.define('basket', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+});
+
+const BasketGame = sequelize.define('basketgame', {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true }
 });
 
 const Buying = sequelize.define( 'buying', {
@@ -55,22 +65,32 @@ const FeedBack = sequelize.define( 'feedback', {
 
 const GamesPlatforms = sequelize.define( 'gamesplatforms', {
     id: {type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true}
-})
+});
 
 const TagsGames = sequelize.define( 'tagsgames', {
     id: {type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true}
-})
+});
 
 
 //Пользователь - Корзина  один к одному
 User.hasOne(Basket);
 Basket.belongsTo(User);
+
+//Пользователь - токен один к одному
+User.hasOne(Token);
+Token.belongsTo(User);
+
+//Корзина - игры многие ко многим
+Basket.belongsToMany(Games, {through: BasketGame});
+Games.belongsToMany(Basket, {through: BasketGame});
+
 //Пользователь - Покупка один ко многим
 User.hasMany(Buying);
 Buying.belongsTo(User);
 //Покупка - Ключ один ко многим
-Buying.hasMany(Keys);
-Keys.belongsTo(Buying);
+Keys.hasOne(Buying);
+Buying.belongsTo(Keys);
+
 //Платформы - ключ один ко многим
 Platforms.hasMany(Keys);
 Keys.belongsTo(Platforms);
@@ -90,7 +110,7 @@ Games.hasMany(FeedBack);
 FeedBack.belongsTo(Games);
 
 
-module.exports = {User, Basket, Buying, Keys, Platforms, Games, Tags, FeedBack, TagsGames, GamesPlatforms};
+module.exports = {User, Token, Basket, Buying, Keys, Platforms, Games, Tags, FeedBack, TagsGames, GamesPlatforms};
 
 
 

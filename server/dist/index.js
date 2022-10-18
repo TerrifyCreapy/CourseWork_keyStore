@@ -24,11 +24,12 @@ const ErrorHandlerMDWR_1 = __importDefault(require("./middleware/ErrorHandlerMDW
 const path_1 = __importDefault(require("path"));
 const models = require("./models/models");
 //taking port from .env file
-const PORT = 3001;
+const PORT = process.env.SERVER_PORT || 3002;
 //init backend
 const app = (0, express_1.default)();
 app.use(cors());
 app.use(express_1.default.json());
+app.use(cookies());
 app.use(express_1.default.static(path_1.default.resolve(__dirname, '..', 'static')));
 app.use(fileUpload({}));
 app.use('/api', router_1.default);

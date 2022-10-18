@@ -11,12 +11,13 @@ import path from "path";
 
 const models = require("./models/models");
 //taking port from .env file
-const PORT =3001;
+const PORT = process.env.SERVER_PORT || 3002;
 
 //init backend
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(cookies());
 app.use(express.static(path.resolve(__dirname, '..', 'static')));
 app.use(fileUpload({}));
 app.use('/api', router);

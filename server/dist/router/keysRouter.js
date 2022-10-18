@@ -8,5 +8,6 @@ const keys_controller_1 = __importDefault(require("../controllers/keys-controlle
 const router = express_1.default.Router();
 router.get('/:id', keys_controller_1.default.getKey);
 router.post('/', keys_controller_1.default.addKeys);
+router.post('/:id', keys_controller_1.default.editKey);
 router.delete('/:id', keys_controller_1.default.removeKey);
 exports.default = router;

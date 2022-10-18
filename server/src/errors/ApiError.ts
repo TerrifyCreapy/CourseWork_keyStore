@@ -1,19 +1,27 @@
 class APIError extends Error {
     status;
-    constructor(status: number, message: string) {
+    errors;
+    constructor(status: number, message: string, errors: [] = []) {
         super();
         this.status = status;
         this.message = message;
+        this.errors = errors;
     }
 
-    static badRequest(message: string): APIError {
-        return new APIError(404, message);
+    static badRequest(message: string, errors:[] = []): APIError {
+        return new APIError(404, message, errors);
     }
-    static internal(message: string): APIError {
+    static internal(message: string, errors:[] = []): APIError {
         return new APIError(500, message);
     }
-    static forbidden(message: string): APIError {
+    static forbidden(message: string, errors:[] = []): APIError {
         return new APIError(403, message);
+    }
+    static notFound(message: string, errors:[] = []): APIError {
+        return new APIError(404, message);
+    }
+    static notAutorized(): APIError {
+        return new APIError(400, "User is no authorized")
     }
 }
 
