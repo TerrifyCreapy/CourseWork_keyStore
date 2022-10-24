@@ -1,11 +1,12 @@
-import express, {Request} from "express";
-import PlatformsControllet from "../controllers/platforms-controllet";
-import platformsControllet from "../controllers/platforms-controllet";
-import roleMiddleWare from "../middleware/roleMiddleWare";
+import express from "express";
+import platformsController from "../controllers/platforms-controller";
+import {isRoles} from "../middleware/roleMiddleWare";
+import {isAuth} from "../middleware/authMiddleWare";
 const router = express.Router();
 
-router.get('/', PlatformsControllet.getPlatforms);
-// @ts-ignore
-router.post('/', roleMiddleWare("ADMIN"), platformsControllet.addPlatform);
+router.get('/', platformsController.getPlatforms);
+router.post('/', isAuth,isRoles("ADMIN"), platformsController.addPlatform);
+router.post('/:id', isAuth, isRoles("ADMIN"), platformsController.editPlatform);
+router.delete('/:id', isAuth, isRoles("ADMIN"), platformsController.removePlatform);
 
 export default router;

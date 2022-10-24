@@ -9,11 +9,13 @@ class UserController {
 
     async registration (req: Request, res: Response, next: NextFunction) {
         try {
+            //validation middleware
             const errors = validationResult(req);
-            if(!errors.isEmpty()) return next(APIError.badRequest("Error validating", errors.array() as []))
+            if(!errors.isEmpty()) return next(APIError.badRequest("Error validating", errors.array() as []));
+            //taking info from registration body
             const {email, password} = req.body;
-
             const user: any = await UserService.registration(email,password);
+            //refreshToken and returning user
             res.cookie('refreshToken', user.refresh, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true});
             return res.json(user);
         }
@@ -23,8 +25,10 @@ class UserController {
     }
     async login (req: Request, res: Response, next: NextFunction) {
         try {
+            //taking info from login body
             const {email, password} = req.body;
             const user:any = await UserService.login(email,password);
+            //if true returning refresh token and user
             res.cookie('refreshToken', user.refresh, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true});
             return res.json(user);
         }
@@ -36,7 +40,9 @@ class UserController {
     }
     async logout(req: Request, res: Response, next: NextFunction) {
         try {
+            //taking refresh token
             const {refreshToken} = req.cookies;
+            //removing tokens and clearing cookies
             const token = await UserService.logout(refreshToken);
             res.clearCookie('refreshToken');
             return res.json(token);
@@ -46,18 +52,37 @@ class UserController {
         }
 
     }
-    async isAuth (req: IGetUserAuthInfoRequest, res: Response<{}>, next: Function) {
-       /* const token = generateJwt(req.user.id, req.user.email, req.user.roles);
-        return res.json({token});*/
-    }
-    async editUser (req: Request, res: Response) {
 
+    async editUser (req: Request, res: Response, next: NextFunction) {
+        try {
+            const {email, password, lastEmail} = req.body;
+            const user = UserService.editProfile(email, password, lastEmail);
+            return res.json(user);
+        }
+        catch (e) {
+            return next(e);
+        }
+    }
+
+    async editRoles(req: Request, res: Response, next: NextFunction) {
+        try {
+            const roles: string[] = req.body.roles.replace("[", "").replace("]", "").split(",");
+
+            const {email} = req.params;
+            const newUser = UserService.editUserRoles(email, roles);
+
+            return res.json(newUser);
+
+        }
+        catch(e) {
+            return next(e);
+        }
     }
 
     async refresh(req: Request, res: Response, next: NextFunction) {
         try {
-            const {email, password} = req.body;
-            const user:any = await UserService.login(email,password);
+            const {refreshToken} = req.cookies;
+            const user:any = await UserService.refresh(refreshToken);
             res.cookie('refreshToken', user.refresh, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true});
             return res.json(user);
         }
@@ -88,8 +113,8 @@ class UserController {
 
     async removeUser(req: Request, res: Response, next: NextFunction) {
         try {
-            const id: number = +req.params.id;
-            const rm = await UserService.removeUser(id);
+            const email: string = req.params.email;
+            const rm = await UserService.removeUser(email);
             return res.json(rm);
         }
         catch(e) {

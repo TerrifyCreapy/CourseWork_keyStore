@@ -2,7 +2,7 @@ import {Request, Response} from "express";
 import APIError from "../errors/ApiError";
 const uuid = require("uuid");
 const path = require("path");
-const {Games, GamesPlatforms, TagsGames} = require("../models/models");
+const {Games, GamesPlatforms, TagsGames, Keys, FeedBack} = require("../models/models");
 const fs = require("fs");
 
 interface MulterRequest extends Request {
@@ -180,21 +180,6 @@ class GamesController {
 
         }
         catch(e: any) {
-            return next(APIError.badRequest(e.message));
-        }
-    }
-
-
-    async removeGame(req: Request, res: Response, next: Function) {
-        try {
-            const {id} = req.query;
-            const game = await Games.destroy({
-                where: {
-                    id: id
-                }
-            });
-            return res.json(game);
-        }catch (e:any) {
             return next(APIError.badRequest(e.message));
         }
     }

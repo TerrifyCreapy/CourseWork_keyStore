@@ -12,20 +12,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const ApiError_1 = __importDefault(require("../errors/ApiError"));
-const { Keys } = require("../models/models");
+const keys_service_1 = __importDefault(require("../service/keys-service"));
 class KeysController {
     addKeys(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const { value, platformId, gameId } = req.body;
-                if (!value || !platformId || !gameId)
-                    next(ApiError_1.default.badRequest("Error with key!"));
-                const newKey = yield Keys.create({ value, platformId, gameId });
+                const body = {
+                    value,
+                    platformId: platformId === "NULL" ? null : platformId,
+                    gameId: gameId === "NULL" ? null : gameId,
+                };
+                const newKey = yield keys_service_1.default.addKey(body.value, body.platformId, body.gameId);
                 return res.status(201).json(newKey);
             }
             catch (e) {
-                return next(ApiError_1.default.badRequest(e.message));
+                return next(e);
             }
         });
     }
@@ -33,13 +35,12 @@ class KeysController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const id = +(req.params.id || -1);
-                if (id === -1)
-                    return next(ApiError_1.default.notFound("Not found"));
-                const key = Keys.findByPk(id);
+                const { email } = req.body;
+                const key = yield keys_service_1.default.getKey(id, email);
                 return res.json(key);
             }
             catch (e) {
-                return next(ApiError_1.default.badRequest(e.message));
+                return next(e);
             }
         });
     }
@@ -47,17 +48,11 @@ class KeysController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const id = +(req.params.id || -1);
-                if (id === -1)
-                    return next(ApiError_1.default.notFound("Not found"));
-                const key = Keys.destroy({
-                    where: {
-                        id
-                    }
-                });
+                const key = yield keys_service_1.default.removeKey(id);
                 return res.json(key);
             }
             catch (e) {
-                return next(ApiError_1.default.badRequest(e.message));
+                return next(e);
             }
         });
     }
@@ -65,24 +60,18 @@ class KeysController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const id = +(req.params.id || -1);
-                if (id === -1)
-                    return next(ApiError_1.default.notFound("Not found"));
                 const { value, platformId, gameId } = req.body;
-                if (!value || !platformId || !gameId)
-                    next(ApiError_1.default.badRequest("Error with key!"));
-                const key = yield Keys.update({
+                const body = {
+                    id,
                     value,
-                    platformId,
-                    gameId
-                }, {
-                    where: {
-                        id
-                    }
-                });
-                return res.json(key);
+                    platformId: platformId === "NULL" ? null : platformId,
+                    gameId: gameId === "NULL" ? null : gameId,
+                };
+                yield keys_service_1.default.editKey(body.id, body.value, body.platformId, body.gameId);
+                return res.sendStatus(200);
             }
             catch (e) {
-                return next(ApiError_1.default.badRequest(e.message));
+                return next(e);
             }
         });
     }

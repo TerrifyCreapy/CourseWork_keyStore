@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const ApiError_1 = __importDefault(require("../errors/ApiError"));
 const uuid = require("uuid");
 const path = require("path");
-const { Games, GamesPlatforms, TagsGames } = require("../models/models");
+const { Games, GamesPlatforms, TagsGames, Keys, FeedBack } = require("../models/models");
 const fs = require("fs");
 class GamesController {
     getGames(req, res, next) {
@@ -162,22 +162,6 @@ class GamesController {
                     dateRealize,
                     dateAdd
                 }, {
-                    where: {
-                        id: id
-                    }
-                });
-                return res.json(game);
-            }
-            catch (e) {
-                return next(ApiError_1.default.badRequest(e.message));
-            }
-        });
-    }
-    removeGame(req, res, next) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const { id } = req.query;
-                const game = yield Games.destroy({
                     where: {
                         id: id
                     }

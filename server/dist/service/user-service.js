@@ -18,28 +18,35 @@ const mail_service_1 = __importDefault(require("./mail-service"));
 const ApiError_2 = __importDefault(require("../errors/ApiError"));
 const token_service_1 = __importDefault(require("./token-service"));
 const uuid = require("uuid");
-const { User, Basket, Buying } = require("../models/models");
+const { User, Buying, FeedBack } = require("../models/models");
+function isExist(email) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const user = yield User.findByPk(email);
+        if (user)
+            return { exist: true };
+        return { exits: false };
+    });
+}
 class UserService {
     registration(email, password) {
         return __awaiter(this, void 0, void 0, function* () {
-            const candidate = yield User.findOne({ where: { email } });
-            if (candidate) {
-                return ApiError_1.default.badRequest("User with current email already exist!");
+            const candidate = yield isExist(email);
+            if (candidate.exist) {
+                throw ApiError_1.default.badRequest("User with current email already exist!");
             }
             const hashPass = yield bcrypt_1.default.hash(password, 5);
             const activationLink = uuid.v4();
             const user = yield User.create({ email, password: hashPass, roles: ["USER"], activetionLink: activationLink });
-            const basket = yield Basket.create({ userId: user.id });
+            const userBuy = yield Buying.create({ userEmail: email });
             yield mail_service_1.default.sendActivation(email, `${process.env.API_URL}/api/user/activate/${activationLink}`);
             const userJwt = {
-                email: user.dataValues.email,
-                id: user.dataValues.id,
-                isActivated: user.dataValues.isConfirmed,
-                roles: user.dataValues.roles
+                email: user.email,
+                isActivated: user.isConfirmed,
+                roles: user.roles
             };
             const tokens = token_service_1.default.generateTokens(Object.assign({}, userJwt));
-            yield token_service_1.default.registerToken(userJwt.id, tokens.refresh);
-            return Object.assign(Object.assign({}, tokens), { user: userJwt });
+            yield token_service_1.default.registerToken(userJwt.email, tokens.refresh);
+            return Object.assign(Object.assign(Object.assign({}, tokens), userBuy), { user: userJwt });
         });
     }
     login(email, password) {
@@ -52,12 +59,11 @@ class UserService {
                 throw ApiError_2.default.badRequest("Password is not correct");
             const userJwt = {
                 email: user.email,
-                id: user.id,
                 isActivated: user.isConfirmed,
                 roles: user.roles
             };
             const tokens = token_service_1.default.generateTokens(Object.assign({}, userJwt));
-            yield token_service_1.default.registerToken(userJwt.id, tokens.refresh);
+            yield token_service_1.default.registerToken(userJwt.email, tokens.refresh);
             return Object.assign(Object.assign({}, tokens), { user: userJwt });
         });
     }
@@ -79,12 +85,11 @@ class UserService {
             const nowUser = yield User.findByPk(userData.id);
             const userJwt = {
                 email: nowUser.email,
-                id: nowUser.id,
                 isActivated: nowUser.isConfirmed,
                 roles: nowUser.roles
             };
             const tokens = token_service_1.default.generateTokens(Object.assign({}, userJwt));
-            yield token_service_1.default.registerToken(userJwt.id, tokens.refresh);
+            yield token_service_1.default.registerToken(userJwt.email, tokens.refresh);
             return Object.assign(Object.assign({}, tokens), { user: userJwt });
         });
     }
@@ -93,7 +98,7 @@ class UserService {
             try {
                 const findLink = yield User.findOne({ where: { activetionLink: link } });
                 if (!findLink)
-                    return ApiError_1.default.badRequest("Incorrect activation link");
+                    throw ApiError_1.default.badRequest("Incorrect activation link");
                 findLink.isConfirmed = true;
                 yield findLink.save();
             }
@@ -108,13 +113,57 @@ class UserService {
             return users;
         });
     }
-    removeUser(id) {
+    removeUser(userEmail) {
         return __awaiter(this, void 0, void 0, function* () {
-            const tokenRemoving = yield token_service_1.default.removeUserToken(id);
-            const basketRemoving = yield Basket.destroy({ where: { userId: id } });
-            const buyingsRemoving = yield Buying.destroy({ where: { userId: id } });
-            const userRemoving = yield User.destroy({ where: { id } });
-            return Object.assign(Object.assign(Object.assign(Object.assign({}, tokenRemoving), basketRemoving), buyingsRemoving), userRemoving);
+            const tokenRemoving = yield token_service_1.default.removeUserToken(userEmail);
+            const feedbackRemoving = yield FeedBack.destroy({ where: { userEmail } });
+            const userRemoving = yield User.destroy({ where: { email: userEmail } });
+            return Object.assign(Object.assign(Object.assign({}, tokenRemoving), feedbackRemoving), userRemoving);
+        });
+    }
+    editProfile(email, password, lastEmail) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!email && !password)
+                throw ApiError_1.default.badRequest("Error email or password");
+            const userData = yield User.findByPk(lastEmail);
+            console.log(!password.length);
+            if (!userData)
+                throw ApiError_1.default.badRequest("Incorrect email");
+            if (password.length) {
+                const comparePass = yield bcrypt_1.default.compare(password, userData.password);
+                if (!comparePass)
+                    throw ApiError_1.default.badRequest("Incorrect password");
+            }
+            let user = null;
+            if (email && !password.length) {
+                const exist = yield isExist(email);
+                if (exist.exist)
+                    throw ApiError_1.default.badRequest("User already exists");
+                user = yield User.update({ email, isConfirmed: false }, { where: { email: userData.email } });
+            }
+            else if (!email && password.length) {
+                const newPass = bcrypt_1.default.hash(password, 5);
+                user = yield User.update({ password: newPass }, { where: { email: userData.email } });
+            }
+            else if (email && password.length) {
+                const exist = yield isExist(email);
+                if (exist.exist)
+                    throw ApiError_1.default.badRequest("User already exists");
+                const newPass = bcrypt_1.default.hash(password, 5);
+                user = yield User.update({ email, password: newPass, isConfirmed: false }, { where: { email } });
+            }
+            return user;
+        });
+    }
+    editUserRoles(email, roles) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!email || !roles.length)
+                throw ApiError_1.default.badRequest("Error email or roles");
+            const userRoles = yield User.update({ roles: roles }, { where: {
+                    email
+                } });
+            const tokenUpdate = yield token_service_1.default.removeUserToken(email);
+            return Object.assign(Object.assign({}, userRoles), tokenUpdate);
         });
     }
 }

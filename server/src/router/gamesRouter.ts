@@ -1,13 +1,14 @@
 import express, {Request} from "express";
 import GamesController from "../controllers/games-controller";
+import {isAuth} from "../middleware/authMiddleWare";
+import {isRoles} from "../middleware/roleMiddleWare";
 const router = express.Router();
 
 router.get('/', GamesController.getGames);
 router.get('/:id', GamesController.getGame);
-router.post('/', GamesController.addGames);
-router.post('/:id', GamesController.editGame);
-router.delete('/', GamesController.removeGame);
-router.post('/:id/t', GamesController.editTags);
-router.post('/:id/p', GamesController.editPlatforms);
+router.post('/',isAuth, isRoles(["ADMIN"]), GamesController.addGames);
+router.post('/:id', isAuth, isRoles(["ADMIN"]), GamesController.editGame);
+router.post('/:id/t', isAuth, isRoles(["ADMIN"]), GamesController.editTags);
+router.post('/:id/p',  isAuth, isRoles(["ADMIN"]), GamesController.editPlatforms);
 
 export default router;

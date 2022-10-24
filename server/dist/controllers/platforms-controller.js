@@ -12,52 +12,60 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const feedback_service_1 = __importDefault(require("../service/feedback-service"));
-const { FeedBack } = require("../models/models");
-class FeedBackController {
-    addComments(req, res, next) {
+const ApiError_1 = __importDefault(require("../errors/ApiError"));
+const { Platforms } = require("../models/models");
+class PlatformsController {
+    getPlatforms(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const { email, value, gameID } = req.body;
-                const comment = yield feedback_service_1.default.addComment(email, value, gameID);
-                return res.status(201).json(comment);
+                const platforms = yield Platforms.findAndCountAll();
+                return res.json(platforms);
             }
             catch (e) {
                 return next(e);
             }
         });
     }
-    getComments(req, res, next) {
+    addPlatform(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { name } = req.body;
+                if (!name)
+                    return next(ApiError_1.default.badRequest("Inserting name of platform is empty! Insert name."));
+                const platform = yield Platforms.create({ name });
+                return res.json(platform);
+            }
+            catch (e) {
+                return next(e);
+            }
+        });
+    }
+    editPlatform(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { id, name } = req.body;
+                if (!name || !id)
+                    return next(ApiError_1.default.badRequest("Error"));
+                const platform = yield Platforms.findByPk(id);
+                if (!platform)
+                    return next(ApiError_1.default.notFound("Not found"));
+                platform.name = name;
+                yield platform.save();
+                return res.sendStatus(200);
+            }
+            catch (e) {
+                return next(e);
+            }
+        });
+    }
+    removePlatform(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const { id } = req.body;
-                const comments = yield feedback_service_1.default.getComments(id);
-                return res.json(comments);
-            }
-            catch (e) {
-                return next(e);
-            }
-        });
-    }
-    removeComment(req, res, next) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const id = +req.params.id;
-                const comment = yield feedback_service_1.default.removeComment(id);
-                return res.json(comment);
-            }
-            catch (e) {
-                return next(e);
-            }
-        });
-    }
-    editComment(req, res, next) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const id = +req.params.id;
-                const value = req.body;
-                const comment = yield feedback_service_1.default.editComment(id, value);
-                return res.json(comment);
+                if (!id)
+                    return next(ApiError_1.default.badRequest("Error"));
+                const platform = yield Platforms.destroy({ where: { id } });
+                return res.json(platform);
             }
             catch (e) {
                 return next(e);
@@ -65,4 +73,4 @@ class FeedBackController {
         });
     }
 }
-exports.default = (new FeedBackController());
+exports.default = (new PlatformsController());

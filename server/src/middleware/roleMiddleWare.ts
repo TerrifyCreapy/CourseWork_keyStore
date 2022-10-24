@@ -4,19 +4,17 @@ import ApiError from "../errors/ApiError";
 
 export interface IGetUserAuthInfoRequest extends Request {
     user: JwtPayload;
+    currentUser: boolean | undefined;
 }
 
 
-export default function (roles: string[]) {
+export const isRoles: any = (roles: string[]) => {
     return function (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) {
         if(req.method === "OPTIONS") {
             next();
         }
+        if(req.currentUser === true) return next();
         try {
-            const token = req.headers.authorization?.split(" ")[1];
-            if(!token) {
-                return next(ApiError.notAutorized());
-            }
             const userRoles: string[] = req.user.roles;
             roles.forEach((e) => {
                 if(userRoles.indexOf(e) === -1) {

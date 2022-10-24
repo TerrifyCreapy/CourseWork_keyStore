@@ -47,14 +47,14 @@ class TokenService {
             return token;
         });
     }
-    registerToken(userId, refreshToken) {
+    registerToken(userEmail, refreshToken) {
         return __awaiter(this, void 0, void 0, function* () {
-            const tokenData = yield Token.findOne({ where: { userId } });
+            const tokenData = yield Token.findOne({ where: { userEmail } });
             if (tokenData) {
                 tokenData.refreshToken = refreshToken;
                 return tokenData.save();
             }
-            const token = yield Token.create({ refreshToken, userId });
+            const token = yield Token.create({ refreshToken, userEmail });
             return token;
         });
     }
@@ -66,9 +66,9 @@ class TokenService {
             return tokenData;
         });
     }
-    removeUserToken(id) {
+    removeUserToken(userEmail) {
         return __awaiter(this, void 0, void 0, function* () {
-            const token = yield Token.destroy({ where: { userId: id } });
+            const token = yield Token.destroy({ where: { userEmail } });
             return token;
         });
     }

@@ -3,8 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const sequelize_1 = require("sequelize");
 const sequelize = require("../db");
 const User = sequelize.define('user', {
-    id: { type: sequelize_1.DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    email: { type: sequelize_1.DataTypes.STRING, unique: true },
+    email: { type: sequelize_1.DataTypes.STRING, unique: true, primaryKey: true },
     password: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     isConfirmed: { type: sequelize_1.DataTypes.BOOLEAN, defaultValue: false },
     activetionLink: { type: sequelize_1.DataTypes.STRING },
@@ -14,16 +13,10 @@ const Token = sequelize.define('token', {
     id: { type: sequelize_1.DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     refreshToken: { type: sequelize_1.DataTypes.STRING(1200), allowNull: false },
 });
-const Basket = sequelize.define('basket', {
-    id: { type: sequelize_1.DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-});
-const BasketGame = sequelize.define('basketgame', {
-    id: { type: sequelize_1.DataTypes.INTEGER, primaryKey: true, autoIncrement: true }
-});
 const Buying = sequelize.define('buying', {
     id: { type: sequelize_1.DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    summary: { type: sequelize_1.DataTypes.INTEGER },
-    date: { type: sequelize_1.DataTypes.DATE }
+    summary: { type: sequelize_1.DataTypes.INTEGER, defaultValue: 0 },
+    status: { type: sequelize_1.DataTypes.STRING, defaultValue: "Opened" },
 });
 const Keys = sequelize.define('keys', {
     id: { type: sequelize_1.DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
@@ -49,7 +42,6 @@ const Tags = sequelize.define('tags', {
 });
 const FeedBack = sequelize.define('feedback', {
     id: { type: sequelize_1.DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    name: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     value: { type: sequelize_1.DataTypes.STRING, allowNull: false }
 });
 const GamesPlatforms = sequelize.define('gamesplatforms', {
@@ -58,34 +50,41 @@ const GamesPlatforms = sequelize.define('gamesplatforms', {
 const TagsGames = sequelize.define('tagsgames', {
     id: { type: sequelize_1.DataTypes.INTEGER, primaryKey: true, autoIncrement: true }
 });
-//Пользователь - Корзина  один к одному
-User.hasOne(Basket);
-Basket.belongsTo(User);
-//Пользователь - токен один к одному
+const GamesPlatformsBuyings = sequelize.define('gamesplatsbuys', {
+    id: { type: sequelize_1.DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    count: { type: sequelize_1.DataTypes.INTEGER, defaultValue: 1 }
+});
+//Пользователь токен
 User.hasOne(Token);
 Token.belongsTo(User);
-//Корзина - игры многие ко многим
-Basket.belongsToMany(Games, { through: BasketGame });
-Games.belongsToMany(Basket, { through: BasketGame });
-//Пользователь - Покупка один ко многим
+//Пользователь покупки
 User.hasMany(Buying);
 Buying.belongsTo(User);
-//Покупка - Ключ один ко многим
-Keys.hasOne(Buying);
-Buying.belongsTo(Keys);
-//Платформы - ключ один ко многим
+//Покупки ключи
+Buying.hasMany(Keys);
+Keys.belongsTo(Buying);
+//Покупки Игры
+Buying.belongsToMany(Games, { through: GamesPlatformsBuyings });
+Games.belongsToMany(Buying, { through: GamesPlatformsBuyings });
+//Покупки платформы
+Buying.belongsToMany(Platforms, { through: GamesPlatformsBuyings });
+Platforms.belongsToMany(Buying, { through: GamesPlatformsBuyings });
+//Ключи платформы
 Platforms.hasMany(Keys);
 Keys.belongsTo(Platforms);
-//Игры - Платформы многие ко многим
-Games.belongsToMany(Platforms, { through: GamesPlatforms });
-Platforms.belongsToMany(Games, { through: GamesPlatforms });
-//Ключи - игры многие к одному
+//Ключи игры
 Games.hasMany(Keys);
 Keys.belongsTo(Games);
-//Игры - теги многие ко многим
-Games.belongsToMany(Tags, { through: TagsGames });
-Tags.belongsToMany(Games, { through: TagsGames });
-//Игры - отзывы один ко многим
+//Платформы игры
+Platforms.belongsToMany(Games, { through: GamesPlatforms });
+Games.belongsToMany(Platforms, { through: GamesPlatforms });
+//Отзывы игры
 Games.hasMany(FeedBack);
 FeedBack.belongsTo(Games);
-module.exports = { User, Token, Basket, Buying, Keys, Platforms, Games, Tags, FeedBack, TagsGames, GamesPlatforms };
+//Отзывы пользователи
+User.hasMany(FeedBack);
+FeedBack.belongsTo(User);
+//Игры теги
+Games.belongsToMany(Tags, { through: TagsGames });
+Tags.belongsToMany(Games, { through: TagsGames });
+module.exports = { User, Token, Buying, Keys, Platforms, Games, Tags, FeedBack, TagsGames, GamesPlatforms, GamesPlatformsBuyings };

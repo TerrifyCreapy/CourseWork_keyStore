@@ -40,13 +40,13 @@ class TokenService {
         return token;
     }
 
-    async registerToken(userId: number, refreshToken: string) {
-        const tokenData = await Token.findOne({where: {userId}});
+    async registerToken(userEmail: string, refreshToken: string) {
+        const tokenData = await Token.findOne({where: {userEmail}});
         if(tokenData) {
             tokenData.refreshToken = refreshToken;
             return tokenData.save();
         }
-        const token = await Token.create({refreshToken, userId});
+        const token = await Token.create({refreshToken, userEmail});
         return token;
     }
 
@@ -57,8 +57,8 @@ class TokenService {
         return tokenData;
     }
 
-    async removeUserToken(id: number) {
-        const token = await Token.destroy({where: {userId: id}});
+    async removeUserToken(userEmail: string) {
+        const token = await Token.destroy({where: {userEmail}});
         return token;
     }
 }

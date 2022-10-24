@@ -13,9 +13,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const ApiError_1 = __importDefault(require("../errors/ApiError"));
-const { Tags } = require("../models/models");
+const { Tags, TagsGames } = require("../models/models");
 class TagsController {
-    getTags(req, res) {
+    getTags(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             const tags = yield Tags.findAll();
             return res.json(tags);
@@ -29,6 +29,39 @@ class TagsController {
                     return next(ApiError_1.default.badRequest("Need a name of tag!"));
                 const tag = yield Tags.create({ name });
                 return res.json(tag);
+            }
+            catch (e) {
+                return next(ApiError_1.default.badRequest(e.message));
+            }
+        });
+    }
+    editTag(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { id, name } = req.body;
+                if (!id || !name)
+                    return next(ApiError_1.default.badRequest("Error with id or name"));
+                const tag = yield Tags.findByPk(id);
+                if (!tag)
+                    return next(ApiError_1.default.notFound("Error"));
+                tag.name = name;
+                yield tag.save;
+                return res.json(tag);
+            }
+            catch (e) {
+                return next(ApiError_1.default.badRequest(e.message));
+            }
+        });
+    }
+    removeTag(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { id } = req.body;
+                if (!id)
+                    return next(ApiError_1.default.badRequest("Error with id"));
+                const tag = yield Tags.destroy({ where: { id } });
+                const tagsGames = yield TagsGames.destroy({ where: { tagId: id } });
+                return res.json(Object.assign(Object.assign({}, tag), tagsGames));
             }
             catch (e) {
                 return next(ApiError_1.default.badRequest(e.message));

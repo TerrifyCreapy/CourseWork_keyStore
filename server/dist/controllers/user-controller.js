@@ -19,11 +19,14 @@ class UserController {
     registration(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
+                //validation middleware
                 const errors = (0, express_validator_1.validationResult)(req);
                 if (!errors.isEmpty())
                     return next(ApiError_1.default.badRequest("Error validating", errors.array()));
+                //taking info from registration body
                 const { email, password } = req.body;
                 const user = yield user_service_1.default.registration(email, password);
+                //refreshToken and returning user
                 res.cookie('refreshToken', user.refresh, { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true });
                 return res.json(user);
             }
@@ -35,8 +38,10 @@ class UserController {
     login(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
+                //taking info from login body
                 const { email, password } = req.body;
                 const user = yield user_service_1.default.login(email, password);
+                //if true returning refresh token and user
                 res.cookie('refreshToken', user.refresh, { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true });
                 return res.json(user);
             }
@@ -48,7 +53,9 @@ class UserController {
     logout(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
+                //taking refresh token
                 const { refreshToken } = req.cookies;
+                //removing tokens and clearing cookies
                 const token = yield user_service_1.default.logout(refreshToken);
                 res.clearCookie('refreshToken');
                 return res.json(token);
@@ -58,21 +65,36 @@ class UserController {
             }
         });
     }
-    isAuth(req, res, next) {
+    editUser(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
-            /* const token = generateJwt(req.user.id, req.user.email, req.user.roles);
-             return res.json({token});*/
+            try {
+                const { email, password, lastEmail } = req.body;
+                const user = user_service_1.default.editProfile(email, password, lastEmail);
+                return res.json(user);
+            }
+            catch (e) {
+                return next(e);
+            }
         });
     }
-    editUser(req, res) {
+    editRoles(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const roles = req.body.roles.replace("[", "").replace("]", "").split(",");
+                const { email } = req.params;
+                const newUser = user_service_1.default.editUserRoles(email, roles);
+                return res.json(newUser);
+            }
+            catch (e) {
+                return next(e);
+            }
         });
     }
     refresh(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const { email, password } = req.body;
-                const user = yield user_service_1.default.login(email, password);
+                const { refreshToken } = req.cookies;
+                const user = yield user_service_1.default.refresh(refreshToken);
                 res.cookie('refreshToken', user.refresh, { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true });
                 return res.json(user);
             }
@@ -107,8 +129,8 @@ class UserController {
     removeUser(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const id = +req.params.id;
-                const rm = yield user_service_1.default.removeUser(id);
+                const email = req.params.email;
+                const rm = yield user_service_1.default.removeUser(email);
                 return res.json(rm);
             }
             catch (e) {

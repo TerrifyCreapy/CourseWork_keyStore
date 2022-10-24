@@ -1,30 +1,49 @@
-import {Request, Response} from "express";
+import {NextFunction, Request, Response} from "express";
 import APIError from "../errors/ApiError";
+import feedbackService from "../service/feedback-service";
 const {FeedBack} = require("../models/models");
 
 class FeedBackController {
-    async addComments(req: Request, res: Response, next: Function) {
-        const {name, value, gameID} = req.body;
-        if(!name || !value) return next(APIError.badRequest("Body of comment is empty!"));
-        const comment = await FeedBack.create({name, value});
-        return res.status(201).json(comment);
+    async addComments(req: Request, res: Response, next: NextFunction) {
+        try {
+            const {email, value, gameID} = req.body;
+            const comment = await feedbackService.addComment(email, value, gameID);
+            return res.status(201).json(comment);
+        }
+        catch(e) {
+            return next(e)
+        }
+
     }
     async getComments(req: Request, res: Response, next: Function) {
-        const {id} = req.body;
-        if(!id) return next(APIError.badRequest("Error with id of game!"));
-        const commends = await FeedBack.findAndCountAll({where: {id}});
-        return res.json(commends);
-
+        try {
+            const {id} = req.body;
+            const comments = await feedbackService.getComments(id);
+            return res.json(comments);
+        }
+        catch(e) {
+            return next(e);
+        }
     }
     async removeComment(req: Request, res: Response, next: Function) {
         try {
-            const id = req.params.id;
-            if(!id) return next(APIError.badRequest("Error with id of comment!"));
-            const comment = await FeedBack.destroy({where: {id}});
+            const id: number = +req.params.id;
+            const comment = await feedbackService.removeComment(id);
             return res.json(comment);
         }
-        catch(e: any) {
-            return next(APIError.badRequest(e.message));
+        catch(e) {
+            return next(e);
+        }
+    }
+    async editComment(req: Request, res: Response, next: Function) {
+        try {
+            const id: number = +req.params.id;
+            const value: string = req.body;
+            const comment = await feedbackService.editComment(id, value);
+            return res.json(comment);
+        }
+        catch(e) {
+            return next(e);
         }
     }
 }

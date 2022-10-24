@@ -1,5 +1,5 @@
 import {NextFunction, Request, Response} from "express";
-import jwt, {JwtPayload} from "jsonwebtoken";
+import {JwtPayload} from "jsonwebtoken";
 import APIError from "../errors/ApiError";
 import TokenService from "../service/token-service";
 
@@ -7,7 +7,7 @@ import TokenService from "../service/token-service";
     user: JwtPayload;
 }
 
-export default function (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) {
+export const isAuth: any = (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     if(req.method === "OPTIONS") {
         next();
     }

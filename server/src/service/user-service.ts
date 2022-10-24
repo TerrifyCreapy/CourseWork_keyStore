@@ -5,38 +5,46 @@ import ApiError from "../errors/ApiError";
 import TokenService from "./token-service";
 import {JwtPayload} from "jsonwebtoken";
 const uuid = require("uuid");
-const {User, Basket, Buying} = require("../models/models");
+const {User, Buying, FeedBack} = require("../models/models");
 
 interface IUserJwtData {
     email: string,
-    id: number,
     isActivated: boolean,
     roles: string[],
 }
 
+
+
+async function isExist(email: string) {
+    const user = await User.findByPk(email);
+    if(user) return {exist:true};
+    return {exits: false};
+}
+
+
 class UserService {
     async registration(email: string, password: string) {
-        const candidate = await User.findOne({where: {email}});
-        if(candidate) {
-            return APIError.badRequest("User with current email already exist!");
+        const candidate = await isExist(email);
+        if(candidate.exist) {
+            throw APIError.badRequest("User with current email already exist!");
         }
         const hashPass= await bcrypt.hash(password, 5);
         const activationLink: string = uuid.v4();
         const user = await User.create({email, password: hashPass, roles: ["USER"], activetionLink:activationLink});
-        const basket = await Basket.create({userId: user.id});
+        const userBuy = await Buying.create({userEmail: email});
         await mailService.sendActivation(email, `${process.env.API_URL}/api/user/activate/${activationLink}`);
 
         const userJwt: IUserJwtData = {
-            email: user.dataValues.email,
-            id: user.dataValues.id,
-            isActivated: user.dataValues.isConfirmed,
-            roles: user.dataValues.roles
+            email: user.email,
+            isActivated: user.isConfirmed,
+            roles: user.roles
         };
         const tokens = TokenService.generateTokens({...userJwt});
-        await TokenService.registerToken(userJwt.id, tokens.refresh);
+        await TokenService.registerToken(userJwt.email, tokens.refresh);
 
         return {
             ...tokens,
+            ...userBuy,
             user: userJwt
         }
     }
@@ -48,12 +56,11 @@ class UserService {
         if(!isPassEquals) throw ApiError.badRequest("Password is not correct");
         const userJwt: IUserJwtData = {
             email: user.email,
-            id: user.id,
             isActivated: user.isConfirmed,
             roles: user.roles
         };
         const tokens = TokenService.generateTokens({...userJwt});
-        await TokenService.registerToken(userJwt.id, tokens.refresh);
+        await TokenService.registerToken(userJwt.email, tokens.refresh);
 
         return {
             ...tokens,
@@ -76,12 +83,11 @@ class UserService {
         const nowUser = await User.findByPk((userData as JwtPayload).id);
         const userJwt: IUserJwtData = {
             email: nowUser.email,
-            id: nowUser.id,
             isActivated: nowUser.isConfirmed,
             roles: nowUser.roles
         };
         const tokens = TokenService.generateTokens({...userJwt});
-        await TokenService.registerToken(userJwt.id, tokens.refresh);
+        await TokenService.registerToken(userJwt.email, tokens.refresh);
 
         return {
             ...tokens,
@@ -92,7 +98,7 @@ class UserService {
     async activate(link: string) {
         try {
             const findLink = await User.findOne({where: {activetionLink: link}});
-            if(!findLink) return APIError.badRequest("Incorrect activation link");
+            if(!findLink) throw APIError.badRequest("Incorrect activation link");
             findLink.isConfirmed = true;
             await findLink.save();
         }
@@ -106,17 +112,74 @@ class UserService {
         return users;
     }
 
-    async removeUser(id: number) {
-        const tokenRemoving = await TokenService.removeUserToken(id);
-        const basketRemoving = await Basket.destroy({where: {userId: id}});
-        const buyingsRemoving = await Buying.destroy({where:{userId: id}});
-        const userRemoving = await User.destroy({where: {id}});
+    async removeUser(userEmail: string) {
+        const tokenRemoving = await TokenService.removeUserToken(userEmail);
+        const feedbackRemoving = await FeedBack.destroy({where: {userEmail}});
+        const userRemoving = await User.destroy({where: {email: userEmail}});
         return {
             ...tokenRemoving,
-            ...basketRemoving,
-            ...buyingsRemoving,
+            ...feedbackRemoving,
             ...userRemoving,
         }
+    }
+
+    async editProfile(email: string, password: string, lastEmail: string) {
+        if(!email && !password) throw APIError.badRequest("Error email or password");
+        const userData = await User.findByPk(lastEmail);
+        console.log(!password.length);
+        if(!userData) throw APIError.badRequest("Incorrect email");
+        if(password.length) {
+            const comparePass = await bcrypt.compare(password, userData.password);
+            if(!comparePass) throw APIError.badRequest("Incorrect password");
+        }
+
+
+        let user: any = null;
+
+        if(email && !password.length) {
+            const exist = await isExist(email);
+            if(exist.exist) throw APIError.badRequest("User already exists");
+            user = await User.update(
+                {email, isConfirmed: false},
+                {where: {email: userData.email}},
+            );
+        }
+        else if(!email && password.length) {
+            const newPass = bcrypt.hash(password, 5);
+            user = await User.update(
+                {password: newPass},
+                {where: {email: userData.email}}
+            );
+        }
+        else if(email && password.length) {
+            const exist = await isExist(email);
+            if(exist.exist) throw APIError.badRequest("User already exists");
+            const newPass = bcrypt.hash(password, 5);
+            user = await User.update(
+                {email, password: newPass, isConfirmed: false},
+                {where: {email}}
+            );
+        }
+        return user;
+    }
+
+    async editUserRoles(email: string ,roles: string[]) {
+
+        if(!email || !roles.length) throw APIError.badRequest("Error email or roles");
+
+        const userRoles = await User.update(
+            {roles: roles},
+            {where: {
+                email
+            }}
+        );
+
+        const tokenUpdate = await TokenService.removeUserToken(email);
+
+        return {
+            ...userRoles,
+            ...tokenUpdate
+        };
     }
 
 }
