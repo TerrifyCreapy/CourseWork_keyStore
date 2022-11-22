@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 //import all dependencies
 const express_1 = __importDefault(require("express"));
 const cors = require('cors');
+const referrerPolicy = require('referrer-policy');
 require('dotenv').config();
 const cookies = require('cookie-parser');
 const dbSequelize = require("./db");
@@ -27,7 +28,11 @@ const models = require("./models/models");
 const PORT = process.env.SERVER_PORT || 3002;
 //init backend
 const app = (0, express_1.default)();
-app.use(cors());
+app.use(cors({
+    credentials: true,
+    origin: process.env.CLIENT_URL
+}));
+app.use(referrerPolicy({ policy: "no-referrer-when-downgrade" }));
 app.use(express_1.default.json());
 app.use(cookies());
 app.use(express_1.default.static(path_1.default.resolve(__dirname, '..', 'static')));

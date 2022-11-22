@@ -5,9 +5,8 @@ import {currentUser} from "../middleware/currentUserMiddleWare";
 import {isRoles} from "../middleware/roleMiddleWare";
 const router = express.Router();
 
-router.get('/', FeedbackController.getComments);
+router.get('/:id', FeedbackController.getComments);
 router.post('/',isAuth, FeedbackController.addComments);
-router.post('/:id', isAuth, currentUser, isRoles(["ADMIN", "MODER"]), FeedbackController.editComment);
-router.delete('/:id',isAuth, currentUser, isRoles(["ADMIN", "MODER"]), FeedbackController.removeComment);
+router.delete('/:id',isAuth, FeedbackController.removeComment);
 
 export default router;

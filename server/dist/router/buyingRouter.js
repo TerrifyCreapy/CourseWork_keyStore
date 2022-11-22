@@ -9,10 +9,14 @@ const authMiddleWare_1 = require("../middleware/authMiddleWare");
 const roleMiddleWare_1 = require("../middleware/roleMiddleWare");
 const currentUserMiddleWare_1 = require("../middleware/currentUserMiddleWare");
 const router = express_1.default.Router();
-router.get('/', authMiddleWare_1.isAuth, currentUserMiddleWare_1.currentUser, (0, roleMiddleWare_1.isRoles)(["MODER", "ADMIN"]), buyings_controller_1.default.getBuyings); //Получение списка пользователей(Только роль модератора и администратора)
-router.post('/pay/:id', authMiddleWare_1.isAuth, currentUserMiddleWare_1.currentUser, buyings_controller_1.default.setStatusPaying);
+router.get('/', authMiddleWare_1.isAuth, currentUserMiddleWare_1.currentUser, (0, roleMiddleWare_1.isRoles)(["MODER", "ADMIN"]), buyings_controller_1.default.getBuyings);
+router.get('/games', authMiddleWare_1.isAuth, buyings_controller_1.default.getAllGamesBougth);
+router.get('/basket', authMiddleWare_1.isAuth, currentUserMiddleWare_1.currentUser, buyings_controller_1.default.getBasket);
+router.get('/history', authMiddleWare_1.isAuth, currentUserMiddleWare_1.currentUser, buyings_controller_1.default.getHistory);
 router.post('/game', authMiddleWare_1.isAuth, currentUserMiddleWare_1.currentUser, buyings_controller_1.default.addGame);
 router.delete('/game', authMiddleWare_1.isAuth, currentUserMiddleWare_1.currentUser, buyings_controller_1.default.removeGame);
+router.get("/test", buyings_controller_1.default.test);
+router.post("/createPayment", authMiddleWare_1.isAuth, currentUserMiddleWare_1.currentUser, buyings_controller_1.default.createPayment);
 /*
 TODO pay for user
 */

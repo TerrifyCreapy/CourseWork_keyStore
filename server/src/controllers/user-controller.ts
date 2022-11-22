@@ -3,6 +3,7 @@ import APIError from "../errors/ApiError";
 import {IGetUserAuthInfoRequest} from "../middleware/authMiddleWare";
 import UserService from "../service/user-service";
 import {validationResult} from "express-validator";
+import mailService from "../service/mail-service";
 
 
 class UserController {
@@ -55,8 +56,9 @@ class UserController {
 
     async editUser (req: Request, res: Response, next: NextFunction) {
         try {
-            const {email, password, lastEmail} = req.body;
-            const user = UserService.editProfile(email, password, lastEmail);
+            const {email, lastEmail} = req.body;
+            const user = await UserService.editProfile(email, lastEmail);
+            res.cookie('refreshToken', user.refresh, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true});
             return res.json(user);
         }
         catch (e) {
@@ -64,9 +66,21 @@ class UserController {
         }
     }
 
+    async editPassword(req: Request, res: Response, next: NextFunction) {
+        try {
+            const {email} = req.params;
+            const {last, New} = req.body;
+            const status = await UserService.editPassword(email, last, New);
+            res.sendStatus(200);
+        }
+        catch(e) {
+            return next(e);
+        }
+    }
+
     async editRoles(req: Request, res: Response, next: NextFunction) {
         try {
-            const roles: string[] = req.body.roles.replace("[", "").replace("]", "").split(",");
+            let {roles} = req.body;
 
             const {email} = req.params;
             const newUser = UserService.editUserRoles(email, roles);
@@ -90,6 +104,18 @@ class UserController {
             return next(e);
         }
     }
+
+    async sendMessage(req: Request, res: Response, next: NextFunction) {
+        try {
+            const {email} = req.body;
+            const sending = await UserService.sendMessage(email);
+            return res.sendStatus(200);
+        }
+        catch(e) {
+            return next(e);
+        }
+    }
+
     async activateAccount(req: Request, res: Response, next: NextFunction) {
         try {
             const {link} = req.params;
@@ -105,6 +131,17 @@ class UserController {
         try {
             const users = await UserService.getUsers();
             return res.json(users);
+        }
+        catch(e) {
+            return next(e);
+        }
+    }
+
+    async getUser(req: Request, res: Response, next: NextFunction) {
+        try{
+            const {email} = req.params;
+            const user = await UserService.getUser(email);
+            return res.json(user);
         }
         catch(e) {
             return next(e);

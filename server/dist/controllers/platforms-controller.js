@@ -18,6 +18,7 @@ class PlatformsController {
     getPlatforms(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
+                console.log(123);
                 const platforms = yield Platforms.findAndCountAll();
                 return res.json(platforms);
             }
@@ -43,7 +44,8 @@ class PlatformsController {
     editPlatform(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const { id, name } = req.body;
+                const { id } = req.params;
+                const { name } = req.body;
                 if (!name || !id)
                     return next(ApiError_1.default.badRequest("Error"));
                 const platform = yield Platforms.findByPk(id);
@@ -61,7 +63,8 @@ class PlatformsController {
     removePlatform(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const { id } = req.body;
+                const { id } = req.params;
+                console.log(123, "next");
                 if (!id)
                     return next(ApiError_1.default.badRequest("Error"));
                 const platform = yield Platforms.destroy({ where: { id } });

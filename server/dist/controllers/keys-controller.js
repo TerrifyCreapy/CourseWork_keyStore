@@ -17,13 +17,8 @@ class KeysController {
     addKeys(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const { value, platformId, gameId } = req.body;
-                const body = {
-                    value,
-                    platformId: platformId === "NULL" ? null : platformId,
-                    gameId: gameId === "NULL" ? null : gameId,
-                };
-                const newKey = yield keys_service_1.default.addKey(body.value, body.platformId, body.gameId);
+                const { keyValue, platformId, gameId } = req.body;
+                const newKey = yield keys_service_1.default.addKey(keyValue, platformId, gameId);
                 return res.status(201).json(newKey);
             }
             catch (e) {
@@ -50,6 +45,19 @@ class KeysController {
                 const id = +(req.params.id || -1);
                 const key = yield keys_service_1.default.removeKey(id);
                 return res.json(key);
+            }
+            catch (e) {
+                return next(e);
+            }
+        });
+    }
+    sendKeys(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { userEmail, buyingId } = req.body;
+                console.log(userEmail, buyingId);
+                const keysgames = yield keys_service_1.default.takeBoughtKeys(userEmail, buyingId);
+                return res.sendStatus(200);
             }
             catch (e) {
                 return next(e);

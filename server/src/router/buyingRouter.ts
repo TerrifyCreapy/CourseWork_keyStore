@@ -5,10 +5,14 @@ import {isRoles} from "../middleware/roleMiddleWare";
 import {currentUser} from "../middleware/currentUserMiddleWare";
 const router = express.Router();
 
-router.get('/', isAuth, currentUser,isRoles(["MODER" ,"ADMIN"]),BuyingsController.getBuyings); //Получение списка пользователей(Только роль модератора и администратора)
-router.post('/pay/:id', isAuth, currentUser, BuyingsController.setStatusPaying);
+router.get('/', isAuth, currentUser,isRoles(["MODER" ,"ADMIN"]),BuyingsController.getBuyings);
+router.get('/games', isAuth, BuyingsController.getAllGamesBougth);
+router.get('/basket', isAuth, currentUser, BuyingsController.getBasket);
+router.get('/history',isAuth, currentUser, BuyingsController.getHistory)
 router.post('/game', isAuth, currentUser, BuyingsController.addGame);
 router.delete('/game', isAuth, currentUser, BuyingsController.removeGame);
+router.get("/test", BuyingsController.test)
+router.post("/createPayment", isAuth, currentUser, BuyingsController.createPayment);
 /*
 TODO pay for user
 */

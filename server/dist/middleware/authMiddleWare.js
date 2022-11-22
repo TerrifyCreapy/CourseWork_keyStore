@@ -20,6 +20,7 @@ const isAuth = (req, res, next) => {
         if (!userData)
             return next(ApiError_1.default.notAutorized());
         req.user = userData;
+        console.log(req.user);
         next();
     }
     catch (e) {

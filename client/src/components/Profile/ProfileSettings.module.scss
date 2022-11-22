@@ -1,0 +1,73 @@
+.settings {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: space-around;
+  & > .confirmAccount {
+
+    .confirmAccountText, .confirmedAccountText {
+      display: inline-block;
+      margin-left: 15px;
+    }
+
+    & > .confirmedAccountText {
+      color: green;
+    }
+    & > .confirmAccountText {
+      color: red;
+      margin-right: 15px;
+    }
+  }
+
+  & > .password {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    & > .pass_text {
+      margin-right: 40px;
+    }
+  }
+  & > .email{
+    font-size: 16px;
+    text-align: center;
+    margin-top: 14px;
+  }
+  & > .editEmail {
+    display: block;
+    width: 50%;
+    border: 1px solid black;
+    padding: 5px 70px 5px 10px;
+    margin: 0 auto;
+    height: 35px;
+  }
+  .cancel {
+    font-size: 24px;
+    position: absolute;
+    top: 4px;
+    right: 27%;
+    background-color: inherit;
+    transition: color 0.3s ease;
+    &:hover {
+      color: red;
+      cursor: pointer;
+    }
+  }
+  .confirm {
+    font-size: 22px;
+    position: absolute;
+    background-color: inherit;
+    top: 4px;
+    right: 32%;
+    &:hover {
+      color: red;
+      cursor: pointer;
+    }
+    &:disabled, &[disabled] {
+      color: grey;
+      cursor: inherit;
+    }
+  }
+}
+

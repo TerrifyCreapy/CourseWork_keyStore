@@ -12,15 +12,18 @@ export const currentUser: any = (req: IGetUserAuthInfoRequest, res: Response, ne
         if (req.method === "OPTIONS") {
             next();
         }
+        console.log(req.body.lastEmail, req.user.email, req.params.email);
         try {
-            if(req.params.email === req.user.email) {
+            console.log(req.body.lastEmail === req.user.email, req.params.email === req.user.email)
+            if(req.body.lastEmail === req.user.email || req.params.email === req.user.email) {
                 req.currentUser = true;
             }
             else {
                 req.currentUser = false;
             }
+            console.log("next");
             next();
         } catch (e: any) {
             return next(APIError.notAutorized());
         }
-    }
+}

@@ -12,16 +12,49 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const sequelize_1 = require("sequelize");
 const ApiError_1 = __importDefault(require("../errors/ApiError"));
 const uuid = require("uuid");
 const path = require("path");
 const { Games, GamesPlatforms, TagsGames, Keys, FeedBack } = require("../models/models");
 const fs = require("fs");
+function findPlatforms(games) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const platformsIds = [];
+        if (!games.rows) {
+            const gamePlat = yield GamesPlatforms.findAll({ where: { gameId: games.id } });
+            const tempArr = [];
+            for (let i = 0; i < gamePlat.length; i++) {
+                tempArr.push(gamePlat[i].dataValues.platformId);
+            }
+            return tempArr;
+        }
+        for (let i = 0; i < games.rows.length; i++) {
+            const t = (yield GamesPlatforms.findAll({ attributes: ['platformId'], where: { gameId: games.rows[i].id } }));
+            const tempArr = [];
+            for (let j = 0; j < t.length; j++) {
+                tempArr.push(t[j].dataValues.platformId);
+            }
+            platformsIds.push({ gameId: games.rows[i].id, platformsId: tempArr });
+        }
+        return platformsIds;
+    });
+}
 class GamesController {
     getGames(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const { tagid, platformid } = req.query;
+                let { tagid, platformid, limit, page, title } = req.query;
+                if (tagid)
+                    tagid = tagid.split('.');
+                if (!title)
+                    title = "%%";
+                else
+                    title = `%${title}%`;
+                const nowPage = page === undefined ? 1 : +page;
+                const nowLimin = limit === undefined ? 5 : +limit;
+                let offset = nowPage * nowLimin - nowLimin;
+                let games = null;
                 if (tagid && platformid) {
                     let gamesIdSTags = yield TagsGames.findAll({
                         attributes: ["gameId"],
@@ -45,12 +78,17 @@ class GamesController {
                             gamesArray.push(gamesIdSTags[i]);
                         }
                     }
-                    let games = yield Games.findAndCountAll({
+                    console.log(gamesArray);
+                    games = yield Games.findAndCountAll({
                         where: {
-                            id: Array.from(gamesArray)
-                        }
+                            id: Array.from(gamesArray),
+                            name: {
+                                [sequelize_1.Op.iLike]: title
+                            }
+                        },
+                        limit,
+                        offset
                     });
-                    return res.json(games);
                 }
                 if (tagid && !platformid) {
                     let gamesIdS;
@@ -62,12 +100,16 @@ class GamesController {
                     });
                     gamesIdS = gamesIdS.map((e) => e.dataValues.gameId);
                     gamesIdS = new Set(gamesIdS);
-                    let games = yield Games.findAndCountAll({
+                    games = yield Games.findAndCountAll({
                         where: {
-                            id: Array.from(gamesIdS)
-                        }
+                            id: Array.from(gamesIdS),
+                            name: {
+                                [sequelize_1.Op.iLike]: title
+                            }
+                        },
+                        limit,
+                        offset,
                     });
-                    return res.json(games);
                 }
                 if (!tagid && platformid) {
                     let gamesIdSPlatform;
@@ -79,15 +121,21 @@ class GamesController {
                     });
                     gamesIdSPlatform = gamesIdSPlatform.map((e) => e.dataValues.gameId);
                     gamesIdSPlatform = new Set(gamesIdSPlatform);
-                    let games = yield Games.findAndCountAll({
+                    games = yield Games.findAndCountAll({
                         where: {
-                            id: Array.from(gamesIdSPlatform)
-                        }
+                            id: Array.from(gamesIdSPlatform),
+                            name: {
+                                [sequelize_1.Op.iLike]: title
+                            }
+                        },
+                        limit, offset
                     });
-                    return res.json(games);
                 }
-                const games = yield Games.findAndCountAll();
-                return res.json(games);
+                if (!tagid && !platformid) {
+                    games = yield Games.findAndCountAll({ where: { name: { [sequelize_1.Op.iLike]: title } }, limit, offset });
+                }
+                const platforms = yield findPlatforms(games);
+                return res.json({ games, platforms });
             }
             catch (e) {
                 return next(ApiError_1.default.badRequest(e.message));
@@ -97,13 +145,15 @@ class GamesController {
     addGames(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const { name, price, platformsID, TagsID, description, discount, dateRealize } = req.body;
+                //console.log((req as MulterRequest).files);
+                const { name, price, platformsId, tagsId, description, discount, dateRealize } = req.body;
                 const { img } = req.files;
+                console.log(description);
                 let fileName = uuid.v4() + ".jpg";
                 img.mv(path.resolve(__dirname, '..', '..', 'static', fileName));
                 const game = yield Games.create({ name, description, img: fileName, price, discount, dateAdd: (new Date()), dateRealize });
-                let platformsIDjson = JSON.parse(platformsID);
-                let TagsIDjson = JSON.parse(TagsID);
+                let platformsIDjson = JSON.parse(platformsId);
+                let TagsIDjson = JSON.parse(tagsId);
                 for (let i = 0; i < platformsIDjson.length; i++) {
                     yield GamesPlatforms.create({ gameId: game.id, platformId: platformsIDjson[i] });
                 }
@@ -121,12 +171,13 @@ class GamesController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const id = +(req.params.id || -1);
-                if (id === -1)
+                if (id === -1 || isNaN(id))
                     return next(ApiError_1.default.badRequest("Input id incorrect!"));
                 const game = yield Games.findByPk(id);
+                const platforms = yield findPlatforms(game);
                 if (!game)
                     return res.sendStatus(404);
-                return res.json(game);
+                return res.json({ game, platforms });
             }
             catch (e) {
                 return next(ApiError_1.default.badRequest(e.message));
@@ -221,6 +272,29 @@ class GamesController {
                     yield GamesPlatforms.create({ gameId: id, platformId });
                     return res.status(201).send("Added!");
                 }
+            }
+            catch (e) {
+                return next(ApiError_1.default.badRequest(e.message));
+            }
+        });
+    }
+    deleteGame(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { id } = req.params;
+                if (!id)
+                    return next(ApiError_1.default.badRequest("Error with id of game"));
+                const gameImg = yield Games.findByPk(id);
+                try {
+                    fs.unlinkSync(path.resolve(__dirname, '..', '..', 'static', gameImg.img));
+                }
+                catch (e) {
+                    console.error(e.message);
+                }
+                const platforms = yield GamesPlatforms.destroy({ where: { gameId: id } });
+                const tags = yield TagsGames.destroy({ where: { gameId: id } });
+                const game = yield Games.destroy({ where: { id } });
+                return res.json(Object.assign(Object.assign(Object.assign({}, platforms), tags), game));
             }
             catch (e) {
                 return next(ApiError_1.default.badRequest(e.message));

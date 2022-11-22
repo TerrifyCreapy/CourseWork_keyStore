@@ -4,7 +4,7 @@ const {Tags, TagsGames} = require("../models/models");
 
 class TagsController {
     async getTags(req: Request, res: Response, next: NextFunction) {
-        const tags = await Tags.findAll();
+        const tags = await Tags.findAndCountAll();
         return res.json(tags);
     }
 
@@ -39,8 +39,10 @@ class TagsController {
 
     async removeTag(req: Request, res: Response, next: NextFunction) {
         try {
-            const {id} = req.body;
+            console.log(req.params, 123);
+            const {id} = req.params;
             if(!id) return next(APIError.badRequest("Error with id"));
+            console.log("remove");
             const tag = await Tags.destroy({where: {id}});
             const tagsGames = await TagsGames.destroy({where: {tagId: id}});
             return res.json({

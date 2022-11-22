@@ -68,9 +68,23 @@ class UserController {
     editUser(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const { email, password, lastEmail } = req.body;
-                const user = user_service_1.default.editProfile(email, password, lastEmail);
+                const { email, lastEmail } = req.body;
+                const user = yield user_service_1.default.editProfile(email, lastEmail);
+                res.cookie('refreshToken', user.refresh, { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true });
                 return res.json(user);
+            }
+            catch (e) {
+                return next(e);
+            }
+        });
+    }
+    editPassword(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { email } = req.params;
+                const { last, New } = req.body;
+                const status = yield user_service_1.default.editPassword(email, last, New);
+                res.sendStatus(200);
             }
             catch (e) {
                 return next(e);
@@ -80,7 +94,7 @@ class UserController {
     editRoles(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const roles = req.body.roles.replace("[", "").replace("]", "").split(",");
+                let { roles } = req.body;
                 const { email } = req.params;
                 const newUser = user_service_1.default.editUserRoles(email, roles);
                 return res.json(newUser);
@@ -97,6 +111,18 @@ class UserController {
                 const user = yield user_service_1.default.refresh(refreshToken);
                 res.cookie('refreshToken', user.refresh, { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true });
                 return res.json(user);
+            }
+            catch (e) {
+                return next(e);
+            }
+        });
+    }
+    sendMessage(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { email } = req.body;
+                const sending = yield user_service_1.default.sendMessage(email);
+                return res.sendStatus(200);
             }
             catch (e) {
                 return next(e);
@@ -120,6 +146,18 @@ class UserController {
             try {
                 const users = yield user_service_1.default.getUsers();
                 return res.json(users);
+            }
+            catch (e) {
+                return next(e);
+            }
+        });
+    }
+    getUser(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { email } = req.params;
+                const user = yield user_service_1.default.getUser(email);
+                return res.json(user);
             }
             catch (e) {
                 return next(e);

@@ -39,5 +39,14 @@ class MailService {
             });
         });
     }
+    sendKeys(to, keys, buyId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const mail = yield this.transporter.sendMail({
+                to,
+                subject: `Заказ №${buyId}`,
+                text: `${keys.map((e) => { return e.gameName + "/" + e.platformName + "\n" + e.keys.join("\n") + "\n\n"; })}`
+            });
+        });
+    }
 }
 exports.default = new MailService();

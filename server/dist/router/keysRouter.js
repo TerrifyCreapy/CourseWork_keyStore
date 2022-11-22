@@ -8,8 +8,9 @@ const keys_controller_1 = __importDefault(require("../controllers/keys-controlle
 const authMiddleWare_1 = require("../middleware/authMiddleWare");
 const roleMiddleWare_1 = require("../middleware/roleMiddleWare");
 const router = express_1.default.Router();
-router.get('/:id', authMiddleWare_1.isAuth, keys_controller_1.default.getKey);
+//router.get('/:id',isAuth, KeysController.getKey);
 router.post('/', authMiddleWare_1.isAuth, (0, roleMiddleWare_1.isRoles)(["ADMIN"]), keys_controller_1.default.addKeys);
+router.post('/send', keys_controller_1.default.sendKeys);
 router.post('/:id', authMiddleWare_1.isAuth, (0, roleMiddleWare_1.isRoles)(["ADMIN"]), keys_controller_1.default.editKey);
 router.delete('/:id', authMiddleWare_1.isAuth, (0, roleMiddleWare_1.isRoles)(["ADMIN"]), keys_controller_1.default.removeKey);
 exports.default = router;

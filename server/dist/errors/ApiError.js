@@ -8,7 +8,7 @@ class APIError extends Error {
         this.errors = errors;
     }
     static badRequest(message, errors = []) {
-        return new APIError(404, message, errors);
+        return new APIError(400, message, errors);
     }
     static internal(message, errors = []) {
         return new APIError(500, message);
@@ -20,7 +20,7 @@ class APIError extends Error {
         return new APIError(404, message);
     }
     static notAutorized() {
-        return new APIError(400, "User is no authorized");
+        return new APIError(401, "User is no authorized");
     }
 }
 exports.default = APIError;

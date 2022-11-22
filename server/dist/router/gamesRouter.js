@@ -14,4 +14,5 @@ router.post('/', authMiddleWare_1.isAuth, (0, roleMiddleWare_1.isRoles)(["ADMIN"
 router.post('/:id', authMiddleWare_1.isAuth, (0, roleMiddleWare_1.isRoles)(["ADMIN"]), games_controller_1.default.editGame);
 router.post('/:id/t', authMiddleWare_1.isAuth, (0, roleMiddleWare_1.isRoles)(["ADMIN"]), games_controller_1.default.editTags);
 router.post('/:id/p', authMiddleWare_1.isAuth, (0, roleMiddleWare_1.isRoles)(["ADMIN"]), games_controller_1.default.editPlatforms);
+router.delete('/:id', authMiddleWare_1.isAuth, (0, roleMiddleWare_1.isRoles)(["ADMIN"]), games_controller_1.default.deleteGame);
 exports.default = router;

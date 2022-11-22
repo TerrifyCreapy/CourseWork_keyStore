@@ -1,6 +1,7 @@
 //import all dependencies
 import express, {Request, Response} from "express";
 const cors = require('cors');
+const referrerPolicy = require('referrer-policy');
 require('dotenv').config();
 const cookies = require('cookie-parser');
 const dbSequelize = require("./db");
@@ -15,7 +16,11 @@ const PORT = process.env.SERVER_PORT || 3002;
 
 //init backend
 const app = express();
-app.use(cors());
+app.use(cors({
+    credentials: true,
+    origin: process.env.CLIENT_URL
+}));
+app.use(referrerPolicy({policy: "no-referrer-when-downgrade"}));
 app.use(express.json());
 app.use(cookies());
 app.use(express.static(path.resolve(__dirname, '..', 'static')));

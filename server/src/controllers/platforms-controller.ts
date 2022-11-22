@@ -5,6 +5,7 @@ const {Platforms} =  require("../models/models");
 class PlatformsController {
     async getPlatforms(req: Request, res: Response, next: NextFunction) {
         try {
+            console.log(123)
             const platforms = await Platforms.findAndCountAll();
             return res.json(platforms);
         }
@@ -27,7 +28,8 @@ class PlatformsController {
 
     async editPlatform(req: Request, res: Response, next: Function) {
         try {
-            const {id, name} = req.body;
+            const {id} = req.params;
+            const {name} = req.body;
             if(!name || !id) return next(APIError.badRequest("Error"));
             const platform = await Platforms.findByPk(id);
             if(!platform) return next(APIError.notFound("Not found"));
@@ -41,7 +43,8 @@ class PlatformsController {
     }
     async removePlatform(req: Request, res: Response, next: Function) {
         try {
-            const {id} = req.body;
+            const {id} = req.params;
+            console.log(123, "next");
             if(!id) return next(APIError.badRequest("Error"));
             const platform = await Platforms.destroy({where: {id}});
             return res.json(platform);

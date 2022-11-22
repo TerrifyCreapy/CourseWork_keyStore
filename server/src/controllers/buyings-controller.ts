@@ -1,27 +1,50 @@
 import {NextFunction, Request, Response} from "express";
 import APIError from "../errors/ApiError";
 import BuyingsService from "../service/buyings-service";
-const {Buying} = require("../models/models");
+import IGetUserAuth from "../interfaces/IGetUserAuthInfoRequest";
+import keysService from "../service/keys-service";
+const {Buying, GamesPlatformsBuyings, Games, Platforms} = require("../models/models");
 
 class BuyingController {
-    async setStatusPaying(req: Request, res: Response, next: NextFunction) {
-        try {
-            const {id, email} = req.body;
-            await BuyingsService.setStatusPaying(id,"Pay");
-            const newBuy = BuyingsService.createNewBuing(email);
 
-            return res.json(newBuy);
+    async getBasket(req: IGetUserAuth, res: Response, next: NextFunction) {
+        try {
+                const {email} = req.user;
+                const basket = await BuyingsService.getBasket(email);
+                return res.json(basket[0]);
         }
         catch(e) {
             return next(e);
         }
+    }
 
+    async getHistory(req: IGetUserAuth, res: Response, next: NextFunction) {
+        try {
+            const {email} = req.user;
+            const history = await BuyingsService.getHistory(email);
+            return res.json(history);
+        }
+        catch(e) {
+            return next(e);
+        }
+    }
+
+    async getAllGamesBougth(req: IGetUserAuth, res: Response, next: NextFunction) {
+        try {
+            const {email} = req.user;
+            console.log(email, 123);
+            const games = await BuyingsService.getBuyingGames(email);
+            return res.json(games);
+        }
+        catch(e) {
+            return next(e);
+        }
     }
 
     async addGame(req: Request, res: Response, next: NextFunction) {
         try {
             let {email, platformId, gameId, count} = req.body;
-            const game = BuyingsService.addGame(email,platformId, gameId, count);
+            const game = BuyingsService.addGame(email,platformId, gameId, count==null? count : 1);
             return res.json(game);
         }
         catch(e) {
@@ -29,9 +52,10 @@ class BuyingController {
         }
     }
 
-    async removeGame(req: Request, res: Response, next: NextFunction) {
+    async removeGame(req: IGetUserAuth, res: Response, next: NextFunction) {
         try {
-            let {email, platformId, gameId} = req.body;
+            let {email} = req.user;
+            let {platformId, gameId} = req.body;
             const game = BuyingsService.removeGame(email,platformId, gameId);
             return res.json(game);
         }
@@ -50,20 +74,39 @@ class BuyingController {
             return next(e);
         }
     }
+
 //TODO pay for user
-    async checkPayment(req: Request, res: Response, next: NextFunction) { //Пока заглушка проверка оплаты
-
-    }
-
-    async setStatusClosed(req: Request, res: Response, next: NextFunction) { //Заглушка
+    async createPayment(req: IGetUserAuth, res: Response, next: NextFunction) { //Пока заглушка проверка оплаты
         try {
-            const {id} = req.body;
-            await BuyingsService.setStatusPaying(id,"Closed");
-            return res.json(200);
+            const {email, price, games} = req.body;
+            console.log(price);
+
+            const isKeys = await keysService.checkKeys(games);
+            if(!isKeys) return next(APIError.badRequest("Not enough keys!"));
+
+            const link = await BuyingsService.createPayment(email, price, games);
+            return res.json(link);
         }
         catch(e) {
             return next(e);
         }
+    }
+
+
+    async test(req: Request, res: Response) {
+        const gamesplats = await GamesPlatformsBuyings.findAll({where: {buyingId: 2}});
+
+        const gamesPlatforms = [];
+
+        for(let i = 0; i < gamesplats.length; i++) {
+            const tGame = await Games.findOne({attributes: ["id", "name", "img", "price", "discount"], where: {id: gamesplats[i].dataValues.gameId}});
+            const tPlatform = await Platforms.findOne({attributes: ["id","name"], where: {id: gamesplats[i].dataValues.platformId}});
+            gamesPlatforms.push({...tGame.dataValues, platform: tPlatform});
+        }
+
+        const platforms = await Platforms.findAll({where: {id: gamesplats.map((e: any) => e.dataValues.platformId)}});
+        const games = await Games.findAll( {attributes: ["id", "name", "img", "price", "discount"],where: {id: gamesplats.map((e:any) => e.dataValues.gameId)}});
+        return res.json(gamesPlatforms);
     }
 }
 

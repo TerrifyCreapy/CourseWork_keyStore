@@ -17,8 +17,8 @@ class FeedBackController {
     }
     async getComments(req: Request, res: Response, next: Function) {
         try {
-            const {id} = req.body;
-            const comments = await feedbackService.getComments(id);
+            const {id} = req.params;
+            const comments = await feedbackService.getComments(+id);
             return res.json(comments);
         }
         catch(e) {

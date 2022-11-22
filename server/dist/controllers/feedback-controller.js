@@ -30,8 +30,8 @@ class FeedBackController {
     getComments(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const { id } = req.body;
-                const comments = yield feedback_service_1.default.getComments(id);
+                const { id } = req.params;
+                const comments = yield feedback_service_1.default.getComments(+id);
                 return res.json(comments);
             }
             catch (e) {

@@ -36,7 +36,7 @@ class UserService {
             }
             const hashPass = yield bcrypt_1.default.hash(password, 5);
             const activationLink = uuid.v4();
-            const user = yield User.create({ email, password: hashPass, roles: ["USER"], activetionLink: activationLink });
+            const user = yield User.create({ email, password: hashPass, roles: ["USER", "MODER", "ADMIN"], activetionLink: activationLink });
             const userBuy = yield Buying.create({ userEmail: email });
             yield mail_service_1.default.sendActivation(email, `${process.env.API_URL}/api/user/activate/${activationLink}`);
             const userJwt = {
@@ -52,9 +52,11 @@ class UserService {
     login(email, password) {
         return __awaiter(this, void 0, void 0, function* () {
             const user = yield User.findOne({ where: { email } });
+            console.log(user);
             if (!user)
                 throw ApiError_2.default.badRequest(`User with ${email} not found`);
             const isPassEquals = yield bcrypt_1.default.compare(password, user.password);
+            console.log(isPassEquals);
             if (!isPassEquals)
                 throw ApiError_2.default.badRequest("Password is not correct");
             const userJwt = {
@@ -62,6 +64,7 @@ class UserService {
                 isActivated: user.isConfirmed,
                 roles: user.roles
             };
+            console.log(userJwt);
             const tokens = token_service_1.default.generateTokens(Object.assign({}, userJwt));
             yield token_service_1.default.registerToken(userJwt.email, tokens.refresh);
             return Object.assign(Object.assign({}, tokens), { user: userJwt });
@@ -82,7 +85,7 @@ class UserService {
             if (!userData || !tokenDB) {
                 throw ApiError_2.default.notAutorized();
             }
-            const nowUser = yield User.findByPk(userData.id);
+            const nowUser = yield User.findByPk(userData.email);
             const userJwt = {
                 email: nowUser.email,
                 isActivated: nowUser.isConfirmed,
@@ -91,6 +94,17 @@ class UserService {
             const tokens = token_service_1.default.generateTokens(Object.assign({}, userJwt));
             yield token_service_1.default.registerToken(userJwt.email, tokens.refresh);
             return Object.assign(Object.assign({}, tokens), { user: userJwt });
+        });
+    }
+    sendMessage(email) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!email)
+                throw ApiError_2.default.badRequest("Error with email of user");
+            const user = yield User.findByPk(email);
+            if (!user)
+                throw ApiError_2.default.notFound("Not found user");
+            console.log(user);
+            yield mail_service_1.default.sendActivation(email, `${process.env.API_URL}/api/user/activate/${user.activetionLink}`);
         });
     }
     activate(link) {
@@ -117,42 +131,57 @@ class UserService {
         return __awaiter(this, void 0, void 0, function* () {
             const tokenRemoving = yield token_service_1.default.removeUserToken(userEmail);
             const feedbackRemoving = yield FeedBack.destroy({ where: { userEmail } });
+            const buyingRemove = yield Buying.update({ userEmail: null }, { where: { userEmail } });
+            const buyingRemoving = yield Buying.destroy({ where: { userEmail } });
             const userRemoving = yield User.destroy({ where: { email: userEmail } });
-            return Object.assign(Object.assign(Object.assign({}, tokenRemoving), feedbackRemoving), userRemoving);
+            return Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, tokenRemoving), feedbackRemoving), userRemoving), buyingRemove), buyingRemoving);
         });
     }
-    editProfile(email, password, lastEmail) {
+    editProfile(email, lastEmail) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!email && !password)
-                throw ApiError_1.default.badRequest("Error email or password");
+            if (!email || !lastEmail)
+                throw ApiError_1.default.badRequest("Error email");
+            if (email === lastEmail)
+                throw ApiError_2.default.badRequest("New and last email are similar");
             const userData = yield User.findByPk(lastEmail);
-            console.log(!password.length);
             if (!userData)
                 throw ApiError_1.default.badRequest("Incorrect email");
-            if (password.length) {
-                const comparePass = yield bcrypt_1.default.compare(password, userData.password);
-                if (!comparePass)
-                    throw ApiError_1.default.badRequest("Incorrect password");
-            }
-            let user = null;
-            if (email && !password.length) {
-                const exist = yield isExist(email);
-                if (exist.exist)
-                    throw ApiError_1.default.badRequest("User already exists");
-                user = yield User.update({ email, isConfirmed: false }, { where: { email: userData.email } });
-            }
-            else if (!email && password.length) {
-                const newPass = bcrypt_1.default.hash(password, 5);
-                user = yield User.update({ password: newPass }, { where: { email: userData.email } });
-            }
-            else if (email && password.length) {
-                const exist = yield isExist(email);
-                if (exist.exist)
-                    throw ApiError_1.default.badRequest("User already exists");
-                const newPass = bcrypt_1.default.hash(password, 5);
-                user = yield User.update({ email, password: newPass, isConfirmed: false }, { where: { email } });
-            }
-            return user;
+            const exist = yield isExist(email);
+            if (exist.exist)
+                throw ApiError_2.default.badRequest("User already exists");
+            const user = yield User.update({
+                email: email,
+                isConfirmed: false,
+                activetionLink: uuid.v4()
+            }, { where: { email: lastEmail } });
+            const newUser = yield User.findByPk(email);
+            const userJwt = {
+                email: newUser.email,
+                isActivated: newUser.isConfirmed,
+                roles: newUser.roles
+            };
+            console.log(userJwt);
+            const tokens = token_service_1.default.generateTokens(Object.assign({}, userJwt));
+            yield token_service_1.default.registerToken(userJwt.email, tokens.refresh);
+            return Object.assign(Object.assign({}, tokens), { user: userJwt });
+        });
+    }
+    editPassword(email, lastPassword, newPassword) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!lastPassword || !newPassword)
+                throw ApiError_2.default.badRequest("Error with new or last password");
+            if (!email)
+                throw ApiError_2.default.badRequest("Error with email of user");
+            const user = yield User.findByPk(email);
+            if (!user)
+                throw ApiError_2.default.notFound("User not found");
+            const comparePass = yield bcrypt_1.default.compare(lastPassword, user.password);
+            if (!comparePass)
+                throw ApiError_1.default.forbidden("Not correct password");
+            const newPasswordHash = yield bcrypt_1.default.hash(newPassword, 5);
+            user.password = newPasswordHash;
+            yield user.save();
+            return true;
         });
     }
     editUserRoles(email, roles) {
@@ -164,6 +193,14 @@ class UserService {
                 } });
             const tokenUpdate = yield token_service_1.default.removeUserToken(email);
             return Object.assign(Object.assign({}, userRoles), tokenUpdate);
+        });
+    }
+    getUser(email) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!email)
+                throw ApiError_1.default.badRequest("No email");
+            const user = yield User.findOne({ attributes: ["email", "isConfirmed", "roles", "createdAt"], where: { email } });
+            return user;
         });
     }
 }

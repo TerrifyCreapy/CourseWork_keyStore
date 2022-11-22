@@ -19,6 +19,7 @@ export const isAuth: any = (req: IGetUserAuthInfoRequest, res: Response, next: N
         const userData = TokenService.validateAccessToken(token);
         if(!userData) return next(APIError.notAutorized());
         req.user = userData as JwtPayload;
+        console.log(req.user);
         next();
     }catch(e:any) {
         return next(APIError.notAutorized());

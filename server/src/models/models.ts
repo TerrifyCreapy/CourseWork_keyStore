@@ -18,6 +18,7 @@ const Buying = sequelize.define( 'buying', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     summary: { type: DataTypes.INTEGER, defaultValue: 0 },
     status: {type: DataTypes.STRING, defaultValue:"Opened"},
+    payLink: {type: DataTypes.STRING(500), defaultValue: null}
 });
 
 const Keys = sequelize.define( 'keys', {

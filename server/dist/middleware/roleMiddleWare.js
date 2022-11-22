@@ -15,10 +15,12 @@ const isRoles = (roles) => {
         try {
             const userRoles = req.user.roles;
             roles.forEach((e) => {
+                console.log(e);
                 if (userRoles.indexOf(e) === -1) {
                     return next(ApiError_1.default.forbidden("Access denied"));
                 }
             });
+            console.log("next");
             next();
         }
         catch (e) {

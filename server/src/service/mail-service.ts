@@ -32,6 +32,15 @@ class MailService {
                         `
                 });
         }
+
+        async sendKeys(to: string, keys: [], buyId: number) {
+                const mail = await this.transporter.sendMail({
+                        to,
+                        subject: `Заказ №${buyId}`,
+                        text: `${keys.map((e: any) => {return e.gameName + "/" + e.platformName + "\n" + e.keys.join("\n") + "\n\n"})}`
+                });
+        }
+
 }
 
 export default new MailService();

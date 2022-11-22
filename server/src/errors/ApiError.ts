@@ -9,7 +9,7 @@ class APIError extends Error {
     }
 
     static badRequest(message: string, errors:[] = []): APIError {
-        return new APIError(404, message, errors);
+        return new APIError(400, message, errors);
     }
     static internal(message: string, errors:[] = []): APIError {
         return new APIError(500, message);
@@ -21,7 +21,7 @@ class APIError extends Error {
         return new APIError(404, message);
     }
     static notAutorized(): APIError {
-        return new APIError(400, "User is no authorized")
+        return new APIError(401, "User is no authorized")
     }
 }
 

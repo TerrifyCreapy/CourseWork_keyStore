@@ -17,7 +17,7 @@ const { Tags, TagsGames } = require("../models/models");
 class TagsController {
     getTags(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
-            const tags = yield Tags.findAll();
+            const tags = yield Tags.findAndCountAll();
             return res.json(tags);
         });
     }
@@ -56,9 +56,11 @@ class TagsController {
     removeTag(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const { id } = req.body;
+                console.log(req.params, 123);
+                const { id } = req.params;
                 if (!id)
                     return next(ApiError_1.default.badRequest("Error with id"));
+                console.log("remove");
                 const tag = yield Tags.destroy({ where: { id } });
                 const tagsGames = yield TagsGames.destroy({ where: { tagId: id } });
                 return res.json(Object.assign(Object.assign({}, tag), tagsGames));
