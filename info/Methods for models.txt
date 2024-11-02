@@ -1,0 +1,8 @@
+Tokens -> add + remove + edit +
+Users -> registration + login + logout + refreshToken + activate + edit + isAuth + remove +
+Feedbacks -> add + remove + edit +
+Keys -> add+ remove+ edit+ get+
+Platforms -> add + remove + edit + get +
+Games -> add remove edit get
+Tags -> add+ remove+ edit+
+Buyings -> add remove getAllSummary 

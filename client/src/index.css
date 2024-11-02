@@ -1,0 +1,46 @@
+*,
+*::before,
+*::after {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  box-sizing: border-box;
+}
+a {
+  text-decoration: none;
+}
+ul,
+ol,
+li {
+  list-style: none;
+}
+
+img {
+  vertical-align: top;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: inherit;
+  font-size: inherit;
+}
+
+body,
+html{
+  height: 100%;
+  line-height: 1;
+  font-size: 24px;
+  background-color: #fff;
+  color: #000;
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+}
+
+#root{
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}

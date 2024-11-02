@@ -1,0 +1,35 @@
+.profile {
+  margin: 0 auto;
+  width: 50%;
+  display: flex;
+  flex: 1 1 auto;
+  background-color: white;
+  border-radius: 10px;
+  .menu {
+    border: 1px solid black;
+    min-width: 100px;
+    * {
+      color: black;
+    }
+    .exit {
+      width: 100%;
+      height: 40px;
+      background-color: white;
+      border: 1px solid black;
+      border-left: none;
+      border-right: none;
+
+      &:hover {
+        background-color: rgba(255, 0, 0, 0.7);
+        cursor: pointer;
+      }
+    }
+  }
+  &Content {
+    flex: 1 1 auto;
+    padding: 5px 5px 5px 10px;
+    border: 1px solid black;
+    border-left: none;
+    display: flex;
+  }
+}
